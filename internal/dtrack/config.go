@@ -10,6 +10,7 @@ import (
 var defaultTimeout = 30
 var defaultFileName = "bom.xml"
 
+
 type Config struct {
 	InputFileName     string
 	ProjectId         string
@@ -18,6 +19,8 @@ type Config struct {
 	ApiKey            string
 	ApiUrl            string
 	SeverityFilter    string
+	CompUuid          string
+	VulnUuid          string
 	SyncMode          bool
 	AutoCreateProject bool
 	UseTeamCityOutput bool

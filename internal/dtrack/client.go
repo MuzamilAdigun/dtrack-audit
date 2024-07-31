@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 )
@@ -19,7 +19,19 @@ const (
 	PROJECT_LOOKUP_URL   = "/api/v1/project/lookup"
 	PROJECT_CREATE_URL   = "/api/v1/project"
 	BOM_TOKEN_URL        = "/api/v1/bom/token"
+	PROJECT_ANALYSIS     = "/api/v1/analysis"
 	API_POLLING_STEP     = 5 * time.Second
+)
+
+type AnalysisState string
+
+const (
+	AnalysisStateExploitable   AnalysisState = "EXPLOITABLE"
+	AnalysisStateFalsePositive AnalysisState = "FALSE_POSITIVE"
+	AnalysisStateInTriage      AnalysisState = "IN_TRIAGE"
+	AnalysisStateNotAffected   AnalysisState = "NOT_AFFECTED"
+	AnalysisStateNotSet        AnalysisState = "NOT_SET"
+	AnalysisStateResolved      AnalysisState = "RESOLVED"
 )
 
 func checkError(e error) {
@@ -45,6 +57,50 @@ type ProcessState struct {
 type ApiClient struct {
 	ApiKey string
 	ApiUrl string
+}
+
+func (apiClient ApiClient) VulnAnalysis(CUuid string, VUuid string, projectId string) (falseP Analysis, err error) {
+
+	client := apiClient.getHttpClient()
+	req, err := http.NewRequest(http.MethodGet, apiClient.ApiUrl+PROJECT_ANALYSIS+"?project="+projectId+"&component="+CUuid+"&vulnerability="+VUuid, nil)
+	//fmt.Println(req)
+	req.Header.Add("X-API-Key", apiClient.ApiKey)
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+	//fmt.Println(resp.)
+	
+	if  resp.StatusCode == 200{
+		err = json.NewDecoder(resp.Body).Decode(&falseP)
+	//result = Filter(result, g)
+		if err != nil {
+			return
+		}
+		return falseP, nil
+
+	}else{
+		err = apiClient.checkRespStatusCode(resp.StatusCode)
+
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+func (apiClient ApiClient) VulURL(s string, v string) (urlss string, err error) {
+	//fmt.Printf("%d source!\n\n", s)
+	//fmt.Printf("%d id!\n\n", v)
+	uv := url.Values{}
+	uv.Set("source", s)
+	uv.Set("vulnId", v)
+	urlss = apiClient.ApiUrl + "/vulnerability?" + uv.Encode()
+	//fmt.Printf("%d uriiiii!\n\n", urlss)
+
+	return urlss, nil
+
 }
 
 func (apiClient ApiClient) Upload(inputFileName, projectId string) (uploadResult UploadResult, err error) {
@@ -154,7 +210,6 @@ type Vulnerability struct {
 	Severity       string `json:"severity"`
 	Recommendation string `json:"recommendation"`
 }
-
 type Analysis struct {
 	AnalysisState string `json:"analysisState"`
 }
@@ -189,6 +244,7 @@ func (g Gate) Evaluate(f Finding) bool {
 	if ok == false {
 		return false
 	}
+	//VulnAnalysis(projectId, f.Comp.Uuid, f.Vuln.Uuid)
 
 	minimalLevel, ok := severityLevels[strings.ToUpper(g.minimalSeverity)]
 

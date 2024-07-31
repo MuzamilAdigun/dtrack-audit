@@ -74,14 +74,14 @@ func populateBomWithFindings(bom *Bom, findings []Finding) *Bom {
 	return bom
 }
 
-func PrintForTeamCity(findings []Finding, config *Config) {
+func PrintForTeamCity(findings []Finding,Analys Analysis, config *Config) {
 	bom := unmarshalXML(config.InputFileName)
 	bom = populateBomWithFindings(bom, findings)
 	for _, component := range bom.Components.Component {
 		lib := component.Name + "@" + component.Version
 		printTeamCityMsg("run", "", lib)
 		if len(component.Vulnerabilities) > 0 {
-			printTeamCityMsg("output", formatFinding(component.Vulnerabilities, config), lib)
+			printTeamCityMsg("output", formatFinding(component.Vulnerabilities, Analys, config), lib)
 			printTeamCityMsg("fail", "", lib)
 		} else {
 			printTeamCityMsg("pass", "", lib)
