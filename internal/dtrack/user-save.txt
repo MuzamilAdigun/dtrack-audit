@@ -28,7 +28,6 @@ func getVulnViewUrl(v Vulnerability, config *Config) string {
 func formatFinding(findings []Finding, Analys Analysis, config *Config) string {
 	var finalString []string
 	for _, f := range findings {
-		//Analyse.Component.CompUid
 
 		//fmt.Println(Analyse)
 		fmt.Printf("An de vul: %v\n", AnalysisState(Analys.AnalysisState))
